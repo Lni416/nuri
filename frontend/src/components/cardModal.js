@@ -81,7 +81,14 @@ export function openCardModal(opts) {
   hint.textContent = "마우스를 이 창 밖으로 옮기면 닫혀요.";
   footEl.appendChild(hint);
 
+  let leaveTimer = null;
+  const cancelScheduledClose = () => {
+    clearTimeout(leaveTimer);
+    leaveTimer = null;
+  };
+
   const shutdown = () => {
+    cancelScheduledClose();
     ac.abort();
     if (root._abort === ac) root._abort = null;
     root.classList.remove("is-open");
@@ -89,11 +96,20 @@ export function openCardModal(opts) {
     root.hidden = true;
   };
 
+  const scheduleClose = () => {
+    cancelScheduledClose();
+    leaveTimer = setTimeout(() => {
+      leaveTimer = null;
+      shutdown();
+    }, 320);
+  };
+
   root.hidden = false;
   root.classList.add("is-open");
   panel.classList.add("is-visible");
   panel.focus({ preventScroll: true });
 
-  panel.addEventListener("mouseleave", shutdown, { signal });
+  panel.addEventListener("mouseleave", scheduleClose, { signal });
+  panel.addEventListener("mouseenter", cancelScheduledClose, { signal });
   closeBtn.addEventListener("click", shutdown, { signal });
 }
