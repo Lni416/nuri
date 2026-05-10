@@ -1,0 +1,27 @@
+{
+  "hosting": {
+    "public": "frontend/dist",
+    "predeploy": [
+      "npm --prefix frontend ci",
+      "npm --prefix frontend run build"
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "nuri-api",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
