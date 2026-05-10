@@ -1,4 +1,4 @@
-# 🌏 NuRI — Nuri + Real Time Intelligence
+# 🌏 NuRI — No-barrier User-centric Realtime Intelligence
 
 > 이용자 정보를 기반으로 지역 행사 및 맞춤형 복지·혜택 정보를 **쉬운 한국어로 요약**하여 제공하는 웹 서비스
 
