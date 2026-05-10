@@ -1,64 +1,62 @@
 /**
- * 결과 카드 컴포넌트.
+ * 결과 카드 컴포넌트 (클릭 시 중앙 팝업으로 상세 표시).
  */
+
+import { openCardModal } from "./cardModal.js";
 
 /**
  * 단일 카드 엘리먼트 생성.
  * @param {Object} card - SummaryCard 데이터
  * @param {number} index - 카드 인덱스 (애니메이션 딜레이용)
+ * @param {{ layout?: "list"|"feed" }} [options] - feed: 복지 2열 그리드용 타일
  */
-export function createCard(card, index = 0) {
+export function createCard(card, index = 0, options = {}) {
+  const layout = options.layout === "feed" ? "feed" : "list";
   const isWelfare = card.category === "복지";
   const categoryClass = isWelfare ? "welfare" : "event";
   const categoryIcon = isWelfare ? "🏛️" : "🎪";
   const categoryLabel = isWelfare ? "복지 혜택" : "행사·축제";
 
-  const el = document.createElement("details");
-  el.className = `result-card category-${isWelfare ? "welfare" : "event"} slide-up`;
+  const el = document.createElement("article");
+  el.className = `result-card category-${isWelfare ? "welfare" : "event"} slide-up${
+    layout === "feed" ? " result-card--feed" : ""
+  }`;
   el.style.animationDelay = `${index * 0.1}s`;
   el.id = `card-${card.id}`;
 
-  // 마크다운 스타일 요약을 HTML로 간단 변환
-  const summaryHTML = formatSummary(card.summary);
+  const preview = document.createElement("button");
+  preview.type = "button";
+  preview.className = "card-preview";
+  preview.setAttribute(
+    "aria-label",
+    `${card.title || "정보"}, 클릭하면 크게 볼 수 있어요`
+  );
 
-  el.innerHTML = `
-    <summary class="card-list-summary">
-      <div class="card-list-main">
-        <h3 class="card-title">${escapeHtml(card.title)}</h3>
+  preview.innerHTML = `
+    <span class="card-preview-inner">
+      <span class="card-list-main">
+        <span class="card-title">${escapeHtml(card.title)}</span>
         <span class="card-category ${categoryClass}">
           ${categoryIcon} ${categoryLabel}
         </span>
-      </div>
-      <span class="card-expand-text">펼쳐보기</span>
-    </summary>
-
-    <div class="card-content">
-      <div class="card-summary">${summaryHTML}</div>
-
-      <div class="card-footer">
-        <span class="card-source">
-          📌 ${escapeHtml(card.source_name || "공공데이터포털")}
-        </span>
-        <div class="card-actions">
-          ${
-            card.source_url
-              ? `<a href="${escapeHtml(card.source_url)}" target="_blank" rel="noopener" class="card-toggle-btn">
-                  🔗 여기서 더 알아볼 수 있어요
-                </a>`
-              : ""
-          }
-        </div>
-      </div>
-    </div>
+      </span>
+      <span class="card-expand-text">크게 보기</span>
+    </span>
   `;
 
-  const expandText = el.querySelector(".card-expand-text");
-  el.addEventListener("toggle", () => {
-    if (expandText) {
-      expandText.textContent = el.open ? "접기" : "펼쳐보기";
-    }
+  preview.addEventListener("click", () => {
+    const summaryHTML = formatSummary(card.summary);
+    const categoryBadge = `<span class="card-category ${categoryClass}">${categoryIcon} ${categoryLabel}</span>`;
+    openCardModal({
+      title: card.title || "정보",
+      categoryLabel: categoryBadge,
+      summaryHTML,
+      sourceName: card.source_name || "",
+      sourceUrl: card.source_url || "",
+    });
   });
 
+  el.appendChild(preview);
   return el;
 }
 

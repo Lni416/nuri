@@ -4,6 +4,63 @@
 
 import { createCard } from "../components/card.js";
 
+const PAGE_SIZE = 8;
+
+/**
+ * @param {"feed"|"list"} layout
+ */
+function mountPaginatedSection(container, { title, cards, layout }) {
+  const sectionTitle = document.createElement("h3");
+  sectionTitle.className = "results-section-title";
+  sectionTitle.textContent = `${title} (${cards.length})`;
+  container.appendChild(sectionTitle);
+
+  const grid = document.createElement("div");
+  grid.className =
+    layout === "feed"
+      ? "results-grid results-grid--feed"
+      : "results-grid results-grid--list";
+
+  let visible = Math.min(PAGE_SIZE, cards.length);
+
+  const appendRange = (endExclusive) => {
+    const start = grid.children.length;
+    for (let i = start; i < endExclusive; i++) {
+      grid.appendChild(
+        createCard(cards[i], i, { layout: layout === "feed" ? "feed" : "list" })
+      );
+    }
+  };
+
+  appendRange(visible);
+  container.appendChild(grid);
+
+  if (cards.length <= visible) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "results-load-more-wrap";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-secondary results-load-more";
+  const remaining = () => cards.length - visible;
+  btn.textContent = `더보기 (${remaining()}개 더)`;
+
+  btn.addEventListener("click", () => {
+    const next = Math.min(visible + PAGE_SIZE, cards.length);
+    appendRange(next);
+    visible = next;
+    if (visible >= cards.length) {
+      wrap.remove();
+      return;
+    }
+    btn.textContent = `더보기 (${remaining()}개 더)`;
+  });
+
+  wrap.appendChild(btn);
+  container.appendChild(wrap);
+}
+
 /**
  * @param {Object} data - SearchResponse
  * @param {Function} onBack - 뒤로가기 콜백
@@ -15,7 +72,6 @@ export function createResultsPage(data, onBack) {
   const container = document.createElement("div");
   container.className = "container";
 
-  // 결과 헤더
   const header = document.createElement("div");
   header.className = "results-header";
 
@@ -35,32 +91,27 @@ export function createResultsPage(data, onBack) {
   }
   container.appendChild(header);
 
-  // 카드 그리드
   if (data.cards && data.cards.length > 0) {
     const welfareCards = data.cards.filter((card) => card.category === "복지");
     const eventCards = data.cards.filter((card) => card.category === "행사");
 
-    const sections = [
-      { title: "🏛️ 복지 정보", cards: welfareCards },
-      { title: "🎪 행사·축제 정보", cards: eventCards },
-    ].filter((section) => section.cards.length > 0);
-
-    sections.forEach((section) => {
-      const sectionTitle = document.createElement("h3");
-      sectionTitle.className = "results-section-title";
-      sectionTitle.textContent = `${section.title} (${section.cards.length})`;
-      container.appendChild(sectionTitle);
-
-      const grid = document.createElement("div");
-      grid.className = "results-grid";
-      section.cards.forEach((card, index) => {
-        grid.appendChild(createCard(card, index));
+    if (welfareCards.length > 0) {
+      mountPaginatedSection(container, {
+        title: "🏛️ 복지 정보",
+        cards: welfareCards,
+        layout: "feed",
       });
-      container.appendChild(grid);
-    });
+    }
+
+    if (eventCards.length > 0) {
+      mountPaginatedSection(container, {
+        title: "🎪 행사·축제 정보",
+        cards: eventCards,
+        layout: "list",
+      });
+    }
   }
 
-  // 다시 검색 버튼
   const backSection = document.createElement("div");
   backSection.style.cssText =
     "text-align: center; margin-top: 3rem; padding-bottom: 1rem;";
@@ -73,7 +124,6 @@ export function createResultsPage(data, onBack) {
 
   page.appendChild(container);
 
-  // 버튼 이벤트
   page.querySelector("#back-btn").addEventListener("click", onBack);
 
   return page;
