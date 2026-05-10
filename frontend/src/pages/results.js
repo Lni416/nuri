@@ -26,9 +26,7 @@ function mountPaginatedSection(container, { title, cards, layout }) {
   const appendRange = (endExclusive) => {
     const start = grid.children.length;
     for (let i = start; i < endExclusive; i++) {
-      grid.appendChild(
-        createCard(cards[i], i, { layout: layout === "feed" ? "feed" : "list" })
-      );
+      grid.appendChild(createCard(cards[i], i, { layout }));
     }
   };
 

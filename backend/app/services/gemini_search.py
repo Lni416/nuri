@@ -15,7 +15,9 @@ from app.services.welfare import fetch_welfare_list, format_welfare_for_summary
 logger = logging.getLogger(__name__)
 
 _RULES_PATH = Path(__file__).resolve().parents[3] / "rules.md"
-MAX_SUMMARY_ITEMS = 8
+MAX_ITEMS_FOR_SUMMARY = 32
+WELFARE_CAP = 24
+EVENT_CAP = 8
 GEMINI_RETRY_DELAYS_SECONDS = (1.0, 2.0)
 TRANSIENT_GEMINI_ERROR_CODES = {429, 500, 502, 503, 504}
 
@@ -213,24 +215,23 @@ async def search_and_summarize(
     settings = get_settings()
     # ── 1단계: 공공데이터포털 API 수집 ──
     welfare_items = await fetch_welfare_list(age=age, occupation=occupation, num_of_rows=60)
-    event_items = await fetch_events(region_code=region_name, num_of_rows=4)
+    event_items = await fetch_events(region_code=region_name, num_of_rows=20)
 
     formatted_welfare = format_welfare_for_summary(welfare_items)
     formatted_events = format_events_for_summary(event_items)
 
-    items = []
-    for item in formatted_welfare:
-        item["category"] = "복지"
-        items.append(item)
-    for item in formatted_events:
-        item["category"] = "행사"
-        items.append(item)
+    all_tagged: list[dict] = [
+        {**w, "category": "복지"} for w in formatted_welfare
+    ] + [
+        {**e, "category": "행사"} for e in formatted_events
+    ]
 
     if interests:
-        items = _apply_interest_filter(items, interests)[:MAX_SUMMARY_ITEMS]
+        items = _apply_interest_filter(all_tagged, interests)[:MAX_ITEMS_FOR_SUMMARY]
     else:
-        # 관심 카테고리가 없을 때는 복지 정보가 행사 정보를 모두 밀어내지 않도록 균형 있게 노출한다.
-        items = items[:8] + items[len(formatted_welfare):len(formatted_welfare) + 4]
+        welfare_rows = [{**w, "category": "복지"} for w in formatted_welfare[:WELFARE_CAP]]
+        event_rows = [{**e, "category": "행사"} for e in formatted_events[:EVENT_CAP]]
+        items = welfare_rows + event_rows
 
     if not items:
         logger.warning("공공데이터포털에서 수집된 항목이 없습니다.")
