@@ -13,7 +13,6 @@ import { searchInfo } from "./utils/api.js";
 class NuriApp {
   constructor() {
     this.app = document.getElementById("app");
-    this.currentPage = null;
     this.init();
   }
 

@@ -28,12 +28,3 @@ export async function searchInfo(params) {
 
   return response.json();
 }
-
-/**
- * 헬스 체크.
- * @returns {Promise<Object>}
- */
-export async function healthCheck() {
-  const response = await fetch(`${API_BASE}/health`);
-  return response.json();
-}

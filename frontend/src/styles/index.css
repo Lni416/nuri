@@ -707,16 +707,6 @@ img {
   min-height: 80px;
 }
 
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-  gap: var(--space-md);
-}
-.card-list-summary {
-  list-style: none;
-}
 .card-list-main {
   display: flex;
   align-items: center;
@@ -730,9 +720,6 @@ img {
   color: var(--color-primary);
   white-space: nowrap;
   font-weight: var(--font-weight-semibold);
-}
-.card-content {
-  margin-top: var(--space-lg);
 }
 .card-category {
   display: inline-flex;
@@ -934,42 +921,6 @@ img {
   z-index: 30;
 }
 
-.card-summary {
-  font-size: var(--font-size-lg);
-  line-height: var(--line-height);
-  color: var(--color-text);
-}
-.card-summary h3 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: var(--space-lg) 0 var(--space-xs);
-  color: var(--color-text);
-}
-.card-summary h3:first-child {
-  margin-top: 0;
-}
-.card-summary p {
-  margin: 0 0 var(--space-sm);
-}
-.card-summary ul {
-  margin: 0 0 var(--space-md);
-  padding-left: var(--space-lg);
-}
-.card-summary li {
-  margin-bottom: 0.15rem;
-}
-.card-summary strong {
-  display: inline;
-  font-size: 1.18em;
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-primary-light);
-  background-color: var(--color-accent-light);
-  background-image: none;
-  padding: 0 0.12em;
-  border-radius: 0.1em;
-  letter-spacing: -0.01em;
-}
-
 .term-help {
   position: relative;
   display: inline;
@@ -1013,24 +964,6 @@ img {
   transform: translateY(0);
 }
 
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: var(--space-lg);
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--color-border-light);
-  flex-wrap: wrap;
-  gap: var(--space-md);
-}
-.card-source {
-  font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-}
-.card-actions {
-  display: flex;
-  gap: var(--space-sm);
-}
 .card-toggle-btn {
   display: inline-flex;
   align-items: center;
@@ -1051,23 +984,6 @@ img {
   background: var(--color-primary-50);
   color: var(--color-primary);
   border-color: var(--color-primary-200);
-}
-
-.card-original {
-  margin-top: var(--space-lg);
-  padding: var(--space-lg);
-  background: #F8FAFC;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-  line-height: var(--line-height);
-  white-space: pre-wrap;
-  word-break: break-all;
-  display: none;
-}
-.card-original.visible {
-  display: block;
-  animation: fadeSlideDown 0.3s ease;
 }
 
 /* ── Loading States ── */
@@ -1233,7 +1149,6 @@ img {
     padding: var(--space-xl);
   }
 
-  .card-header,
   .card-list-main {
     flex-direction: column;
     align-items: flex-start;
@@ -1241,11 +1156,6 @@ img {
   }
 
   .card-preview-inner {
-    align-items: flex-start;
-  }
-
-  .card-footer {
-    flex-direction: column;
     align-items: flex-start;
   }
 
