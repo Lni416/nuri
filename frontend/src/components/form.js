@@ -2,6 +2,8 @@
  * 사용자 정보 입력 폼 컴포넌트.
  */
 
+import { createNaverRegionPicker } from "./naverRegionPicker.js";
+
 // BigDataCloud 역지오코딩 principalSubdivisionCode(ISO 3166-2:KR) → 폼 value(시/도 code)
 const PRINCIPAL_SUBDIVISION_ISO_TO_CODE = {
   "KR-11": "서울",
@@ -126,9 +128,12 @@ export function createForm(onSubmit) {
           <span class="locate-text">내 위치로 자동 선택</span>
         </button>
         <p class="form-hint locate-status" id="locate-status" aria-live="polite"></p>
+        <div id="region-map-host" class="region-map-host"></div>
+        <p class="form-hint region-select-fallback-hint" id="region-select-fallback-hint">시·도를 목록에서 고를 수도 있어요.</p>
         <div class="region-row">
           <div class="region-col">
-            <select id="province-select" class="form-select" required>
+            <label for="province-select" class="visually-hidden">시·도 (목록)</label>
+            <select id="province-select" class="form-select" required aria-describedby="region-select-fallback-hint">
               <option value="">시/도를 선택하세요</option>
               ${REGIONS.map(
                 (r) => `<option value="${r.code}" data-name="${r.name}">${r.name}</option>`
@@ -216,11 +221,7 @@ export function createForm(onSubmit) {
     }
   };
 
-  provinceSelect.addEventListener("change", () => {
-    refreshCityOptions(provinceSelect.value);
-  });
-
-  // === 내 위치로 자동 선택 (GPS + 역지오코딩) ===
+  const regionMapHost = section.querySelector("#region-map-host");
   const locateBtn = section.querySelector("#locate-btn");
   const locateStatus = section.querySelector("#locate-status");
 
@@ -228,6 +229,31 @@ export function createForm(onSubmit) {
     locateStatus.textContent = message;
     locateStatus.dataset.tone = tone;
   };
+
+  let regionPickerApi = { setSelected: () => {} };
+
+  const naverMapKey = import.meta.env.VITE_NAVER_MAP_KEY_ID;
+  createNaverRegionPicker({
+    keyId: typeof naverMapKey === "string" ? naverMapKey : undefined,
+    regions: REGIONS,
+    regionCities: REGION_CITIES,
+    onPick: ({ province, city }) => {
+      provinceSelect.value = province.code;
+      refreshCityOptions(province.code);
+      if (city) citySelect.value = city;
+    },
+    onStatus: setLocateStatus,
+  }).then((api) => {
+    regionMapHost.appendChild(api.el);
+    regionPickerApi = api;
+  });
+
+  provinceSelect.addEventListener("change", () => {
+    refreshCityOptions(provinceSelect.value);
+    regionPickerApi.setSelected(provinceSelect.value || "");
+  });
+
+  // === 내 위치로 자동 선택 (GPS + 역지오코딩) ===
 
   locateBtn.addEventListener("click", async () => {
     if (!navigator.geolocation) {
@@ -248,6 +274,7 @@ export function createForm(onSubmit) {
 
       provinceSelect.value = matched.province.code;
       refreshCityOptions(matched.province.code);
+      regionPickerApi.setSelected(matched.province.code);
       if (matched.city) {
         citySelect.value = matched.city;
       }
