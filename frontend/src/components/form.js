@@ -2,6 +2,27 @@
  * 사용자 정보 입력 폼 컴포넌트.
  */
 
+// BigDataCloud 역지오코딩 principalSubdivisionCode(ISO 3166-2:KR) → 폼 value(시/도 code)
+const PRINCIPAL_SUBDIVISION_ISO_TO_CODE = {
+  "KR-11": "서울",
+  "KR-26": "부산",
+  "KR-27": "대구",
+  "KR-28": "인천",
+  "KR-29": "광주",
+  "KR-30": "대전",
+  "KR-31": "울산",
+  "KR-41": "경기",
+  "KR-42": "강원",
+  "KR-43": "충북",
+  "KR-44": "충남",
+  "KR-45": "전북",
+  "KR-46": "전남",
+  "KR-47": "경북",
+  "KR-48": "경남",
+  "KR-49": "제주",
+  "KR-50": "세종",
+};
+
 // 시/도 목록 (TourAPI areaCode와 매핑)
 const REGIONS = [
   { code: "서울", name: "서울특별시" },
@@ -312,7 +333,7 @@ async function detectRegionFromGPS() {
         };
         reject(new Error(messages[err.code] || "위치를 가져오지 못했어요."));
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60_000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   });
 
@@ -334,16 +355,31 @@ async function detectRegionFromGPS() {
 function matchRegionFromGeocode(data) {
   const candidates = collectCandidates(data);
 
-  const province = REGIONS.find((r) =>
-    candidates.some(
-      (c) => c === r.name || c === r.code || c.includes(r.name) || r.name.includes(c)
-    )
-  );
+  const iso = data.principalSubdivisionCode;
+  let province = null;
+  if (iso && PRINCIPAL_SUBDIVISION_ISO_TO_CODE[iso]) {
+    const short = PRINCIPAL_SUBDIVISION_ISO_TO_CODE[iso];
+    province = REGIONS.find((r) => r.code === short);
+  }
+
+  if (!province) {
+    province = REGIONS.find((r) =>
+      candidates.some(
+        (c) =>
+          c === r.name ||
+          c === r.code ||
+          c.includes(r.name) ||
+          r.name.includes(c)
+      )
+    );
+  }
   if (!province) return null;
 
   const cities = REGION_CITIES[province.code] || [];
   const city = cities.find((cityName) =>
-    candidates.some((c) => c === cityName || c.includes(cityName))
+    candidates.some(
+      (c) => c === cityName || c.includes(cityName) || cityName.includes(c)
+    )
   );
 
   return { province, city: city || "" };
