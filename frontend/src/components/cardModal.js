@@ -24,6 +24,7 @@ function ensureModalRoot() {
     </div>
   `;
   document.body.appendChild(root);
+  root.hidden = true;
   return root;
 }
 
@@ -37,12 +38,20 @@ function ensureModalRoot() {
  */
 export function openCardModal(opts) {
   const root = ensureModalRoot();
+
+  if (root._leaveTimer != null) {
+    clearTimeout(root._leaveTimer);
+    root._leaveTimer = null;
+  }
   if (root._abort) {
     root._abort.abort();
     root._abort = null;
   }
 
   const panel = root.querySelector(".card-modal__panel");
+  root.classList.remove("is-open");
+  panel.classList.remove("is-visible");
+  root.hidden = true;
   const titleEl = root.querySelector("#nuri-card-modal-title");
   const catEl = root.querySelector("#nuri-card-modal-category");
   const bodyEl = root.querySelector(".card-modal__body");
@@ -81,10 +90,11 @@ export function openCardModal(opts) {
   hint.textContent = "마우스를 이 창 밖으로 옮기면 닫혀요.";
   footEl.appendChild(hint);
 
-  let leaveTimer = null;
   const cancelScheduledClose = () => {
-    clearTimeout(leaveTimer);
-    leaveTimer = null;
+    if (root._leaveTimer != null) {
+      clearTimeout(root._leaveTimer);
+      root._leaveTimer = null;
+    }
   };
 
   const shutdown = () => {
@@ -98,8 +108,8 @@ export function openCardModal(opts) {
 
   const scheduleClose = () => {
     cancelScheduledClose();
-    leaveTimer = setTimeout(() => {
-      leaveTimer = null;
+    root._leaveTimer = setTimeout(() => {
+      root._leaveTimer = null;
       shutdown();
     }, 320);
   };

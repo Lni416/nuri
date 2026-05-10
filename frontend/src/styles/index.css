@@ -816,6 +816,11 @@ img {
   justify-content: center;
   padding: var(--space-md);
 }
+/* display:flex 가 [hidden]보다 우선할 수 있어 닫힌 뒤에도 전체 화면이 클릭을 가로막는 문제 방지 */
+.nuri-card-modal[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
 .nuri-card-modal::before {
   content: "";
   position: absolute;
