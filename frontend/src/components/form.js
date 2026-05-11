@@ -3,27 +3,11 @@
  */
 
 import { createNaverRegionPicker } from "./naverRegionPicker.js";
-
-// BigDataCloud 역지오코딩 principalSubdivisionCode(ISO 3166-2:KR) → 폼 value(시/도 code)
-const PRINCIPAL_SUBDIVISION_ISO_TO_CODE = {
-  "KR-11": "서울",
-  "KR-26": "부산",
-  "KR-27": "대구",
-  "KR-28": "인천",
-  "KR-29": "광주",
-  "KR-30": "대전",
-  "KR-31": "울산",
-  "KR-41": "경기",
-  "KR-42": "강원",
-  "KR-43": "충북",
-  "KR-44": "충남",
-  "KR-45": "전북",
-  "KR-46": "전남",
-  "KR-47": "경북",
-  "KR-48": "경남",
-  "KR-49": "제주",
-  "KR-50": "세종",
-};
+import {
+  loadNaverMapsWithGeocoder,
+  reverseGeocodeCoordString,
+  reverseGeocodeServiceToRegion,
+} from "../lib/naverMapsGeocode.js";
 
 // 시/도 목록 (TourAPI areaCode와 매핑)
 const REGIONS = [
@@ -245,7 +229,16 @@ export function createForm(onSubmit) {
     onStatus: setLocateStatus,
   }).then((api) => {
     regionMapHost.appendChild(api.el);
+    api.initMap();
     regionPickerApi = api;
+    section.addEventListener(
+      "animationend",
+      (e) => {
+        if (e.animationName !== "fadeIn" && e.animationName !== "slideUp") return;
+        api.relayoutMap();
+      },
+      { once: true }
+    );
   });
 
   provinceSelect.addEventListener("change", () => {
@@ -345,10 +338,16 @@ export function createForm(onSubmit) {
 }
 
 /**
- * GPS 좌표를 받아 BigDataCloud 역지오코딩 API로 한국 행정구역을 추정한다.
- * (무료 클라이언트 엔드포인트 — 키 불필요, CORS 허용)
+ * GPS 좌표를 네이버 역지오코딩(JS Geocoder)으로 받아 시·도·시군구에 매칭한다.
  */
 async function detectRegionFromGPS() {
+  const keyId = import.meta.env.VITE_NAVER_MAP_KEY_ID;
+  if (typeof keyId !== "string" || !keyId.trim()) {
+    throw new Error(
+      "내 위치 자동 선택에는 네이버 지도 키가 필요해요. `.env`에 VITE_NAVER_MAP_KEY_ID를 넣어 주세요."
+    );
+  }
+
   const position = await new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       resolve,
@@ -365,71 +364,24 @@ async function detectRegionFromGPS() {
   });
 
   const { latitude, longitude } = position.coords;
-  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ko`;
-
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error("위치 변환 서버 응답이 올바르지 않아요.");
-  }
-  const data = await res.json();
-
-  return matchRegionFromGeocode(data);
-}
-
-/**
- * 역지오코딩 결과(JSON)를 우리 시/도 + 시/군/구 목록과 매칭.
- */
-function matchRegionFromGeocode(data) {
-  const candidates = collectCandidates(data);
-
-  const iso = data.principalSubdivisionCode;
-  let province = null;
-  if (iso && PRINCIPAL_SUBDIVISION_ISO_TO_CODE[iso]) {
-    const short = PRINCIPAL_SUBDIVISION_ISO_TO_CODE[iso];
-    province = REGIONS.find((r) => r.code === short);
+  const coordStr = reverseGeocodeCoordString(latitude, longitude);
+  if (!coordStr) {
+    throw new Error("좌표를 읽지 못했어요.");
   }
 
-  if (!province) {
-    province = REGIONS.find((r) =>
-      candidates.some(
-        (c) =>
-          c === r.name ||
-          c === r.code ||
-          c.includes(r.name) ||
-          r.name.includes(c)
-      )
-    );
-  }
-  if (!province) return null;
-
-  const cities = REGION_CITIES[province.code] || [];
-  const city = cities.find((cityName) =>
-    candidates.some(
-      (c) => c === cityName || c.includes(cityName) || cityName.includes(c)
-    )
+  await loadNaverMapsWithGeocoder(keyId);
+  const n = window.naver;
+  const { parsed, transportOk } = await reverseGeocodeServiceToRegion(
+    n,
+    coordStr,
+    REGIONS,
+    REGION_CITIES
   );
-
-  return { province, city: city || "" };
-}
-
-function collectCandidates(data) {
-  const out = [];
-  const push = (value) => {
-    if (typeof value !== "string") return;
-    const trimmed = value.trim();
-    if (trimmed) out.push(trimmed);
-  };
-
-  push(data.principalSubdivision);
-  push(data.locality);
-  push(data.city);
-
-  for (const entry of data.localityInfo?.administrative || []) {
-    push(entry?.name);
-    push(entry?.isoName);
+  if (parsed) {
+    return { province: parsed.province, city: parsed.city };
   }
-  for (const entry of data.localityInfo?.informative || []) {
-    push(entry?.name);
+  if (transportOk) {
+    return null;
   }
-  return out;
+  throw new Error("현재 위치의 주소를 찾지 못했어요. 목록에서 골라 주세요.");
 }

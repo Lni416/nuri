@@ -32,7 +32,24 @@ export function createCard(card, index = 0, options = {}) {
     `${card.title || "정보"}, 클릭하면 크게 볼 수 있어요`
   );
 
-  preview.innerHTML = `
+  const feedArtSrc = isWelfare ? "/illustrations/welfare-feed.svg" : "/illustrations/event-feed.svg";
+  const inner =
+    layout === "feed"
+      ? `
+    <span class="card-preview-inner">
+      <span class="card-feed-art" aria-hidden="true">
+        <img src="${feedArtSrc}" alt="" width="120" height="120" decoding="async" />
+      </span>
+      <span class="card-list-main">
+        <span class="card-title">${escapeHtml(card.title)}</span>
+        <span class="card-category ${categoryClass}">
+          ${categoryIcon} ${categoryLabel}
+        </span>
+      </span>
+      <span class="card-expand-text">크게 보기</span>
+    </span>
+  `
+      : `
     <span class="card-preview-inner">
       <span class="card-list-main">
         <span class="card-title">${escapeHtml(card.title)}</span>
@@ -43,6 +60,7 @@ export function createCard(card, index = 0, options = {}) {
       <span class="card-expand-text">크게 보기</span>
     </span>
   `;
+  preview.innerHTML = inner;
 
   preview.addEventListener("click", () => {
     const summaryHTML = formatSummary(card.summary);

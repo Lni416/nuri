@@ -11,10 +11,15 @@ export function extractNaverSidoSigungu(v2) {
   if (!Array.isArray(results) || results.length === 0) {
     return { sido: null, sigungu: null };
   }
-  const r0 = results[0];
-  const sido = r0?.region?.area1?.name?.trim() || null;
-  const sigungu = r0?.region?.area2?.name?.trim() || null;
-  return { sido, sigungu };
+  /** roadaddr 등 첫 항목에 행정구역이 없을 수 있음 — legalcode/admcode 항목 탐색 */
+  for (const r of results) {
+    const sido = r?.region?.area1?.name?.trim() || null;
+    if (sido) {
+      const sigungu = r?.region?.area2?.name?.trim() || null;
+      return { sido, sigungu };
+    }
+  }
+  return { sido: null, sigungu: null };
 }
 
 /** 네이버 시·도 표기 → 우리 regions[].code (특별자치 등 별칭 포함) */
@@ -82,4 +87,34 @@ export function parseNaverReverseGeocodeForForm(v2, regions, regionCities) {
   if (!province) return null;
   const city = matchCityFromNaverSigungu(sigungu, province.code, regionCities);
   return { province, city };
+}
+
+/**
+ * SDK reverseGeocode 콜백 response 전체 파싱(v2 우선, 없으면 레거시 result.items).
+ * @param {unknown} response
+ */
+export function parseNaverReverseGeocodeResponse(response, regions, regionCities) {
+  const v2 = response?.v2;
+  if (v2) {
+    const fromV2 = parseNaverReverseGeocodeForForm(v2, regions, regionCities);
+    if (fromV2) return fromV2;
+  }
+
+  const items = response?.result?.items;
+  if (Array.isArray(items)) {
+    for (const item of items) {
+      const d = item?.addrdetail;
+      const sidoRaw = d?.sido;
+      if (typeof sidoRaw !== "string" || !sidoRaw.trim()) continue;
+      const sido = sidoRaw.trim();
+      const sigunguRaw = d?.sigugun;
+      const sigungu = typeof sigunguRaw === "string" ? sigunguRaw.trim() : "";
+      const province = matchProvinceFromNaverSido(sido, regions);
+      if (!province) continue;
+      const city = matchCityFromNaverSigungu(sigungu || null, province.code, regionCities);
+      return { province, city };
+    }
+  }
+
+  return null;
 }
