@@ -873,6 +873,8 @@ img {
   align-items: center;
   justify-content: center;
   padding: var(--space-md);
+  /* 모달 안에서 끝까지 스크롤한 뒤 이어지는 휠/터치가 뒤 페이지로 전달되지 않게 */
+  overscroll-behavior: none;
 }
 /* display:flex 가 [hidden]보다 우선할 수 있어 닫힌 뒤에도 전체 화면이 클릭을 가로막는 문제 방지 */
 .nuri-card-modal[hidden] {
@@ -903,6 +905,7 @@ img {
   box-shadow: var(--shadow-xl);
   border: 3px solid var(--color-primary-200);
   overflow: hidden;
+  overscroll-behavior: contain;
   transform: scale(0.94);
   opacity: 0;
   transition: transform 0.22s ease, opacity 0.22s ease;
@@ -941,6 +944,7 @@ img {
 .card-modal__body {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 1.25rem;
   line-height: 1.65;
   padding-right: var(--space-xs);

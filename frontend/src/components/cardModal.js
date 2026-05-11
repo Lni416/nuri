@@ -3,6 +3,34 @@
  */
 
 const MODAL_ID = "nuri-card-modal";
+const BODY_LOCK_ATTR = "data-nuri-modal-scroll-lock";
+const BODY_SCROLL_Y_ATTR = "data-nuri-modal-scroll-y";
+
+function lockBodyScroll() {
+  if (document.body.getAttribute(BODY_LOCK_ATTR) === "1") return;
+  document.body.setAttribute(BODY_LOCK_ATTR, "1");
+  document.body.setAttribute(BODY_SCROLL_Y_ATTR, String(window.scrollY));
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${window.scrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+  document.body.style.overflow = "hidden";
+}
+
+function unlockBodyScroll() {
+  if (document.body.getAttribute(BODY_LOCK_ATTR) !== "1") return;
+  const y = parseInt(document.body.getAttribute(BODY_SCROLL_Y_ATTR) || "0", 10);
+  document.body.removeAttribute(BODY_LOCK_ATTR);
+  document.body.removeAttribute(BODY_SCROLL_Y_ATTR);
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  document.body.style.overflow = "";
+  window.scrollTo(0, y);
+}
 
 function ensureModalRoot() {
   let root = document.getElementById(MODAL_ID);
@@ -104,6 +132,7 @@ export function openCardModal(opts) {
     root.classList.remove("is-open");
     panel.classList.remove("is-visible");
     root.hidden = true;
+    unlockBodyScroll();
   };
 
   const scheduleClose = () => {
@@ -117,6 +146,7 @@ export function openCardModal(opts) {
   root.hidden = false;
   root.classList.add("is-open");
   panel.classList.add("is-visible");
+  lockBodyScroll();
   panel.focus({ preventScroll: true });
 
   panel.addEventListener("mouseleave", scheduleClose, { signal });
