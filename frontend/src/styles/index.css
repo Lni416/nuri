@@ -1001,9 +1001,12 @@ img {
   content: attr(data-tooltip);
   position: absolute;
   left: 0;
-  bottom: calc(100% + 0.5rem);
+  top: calc(100% + 0.5rem);
+  bottom: auto;
   z-index: 20;
   width: min(22rem, 80vw);
+  max-height: min(50vh, 18rem);
+  overflow-y: auto;
   padding: var(--space-md);
   color: var(--color-text);
   background: #FFFFFF;
@@ -1016,7 +1019,7 @@ img {
   white-space: normal;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(0.25rem);
+  transform: translateY(-0.25rem);
   transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 .term-help:hover::after,
