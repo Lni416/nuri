@@ -822,6 +822,22 @@ img {
     #f8fafc 100%
   );
 }
+.result-card--feed .card-feed-art {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: var(--space-xs) 0;
+}
+.result-card--feed .card-feed-art img {
+  max-width: 85%;
+  max-height: 140px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.92;
+}
 .result-card--feed.category-event .card-preview-inner {
   background: linear-gradient(165deg, #fff7ed 0%, var(--color-bg-card) 42%, #f8fafc 100%);
 }
@@ -1162,6 +1178,11 @@ img {
 }
 .slide-up {
   animation: slideUp 0.5s ease;
+}
+
+/* 폼 내 네이버 지도: 부모 transform(slideUp)이 있으면 타일이 일부만 그려지는 경우가 있어 페이드만 사용 */
+.form-section.slide-up {
+  animation: fadeIn 0.5s ease;
 }
 
 /* ── Responsive ── */

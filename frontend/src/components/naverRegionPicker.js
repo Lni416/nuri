@@ -2,36 +2,11 @@
  * 네이버 지도：클릭 → 역지오코딩 → 시·도 선택 콜백
  */
 
-import { parseNaverReverseGeocodeForForm } from "../lib/koreaRegionFromNaver.js";
-
-const MAP_SCRIPT = "https://oapi.map.naver.com/openapi/v3/maps.js";
-
-let scriptPromise = null;
-
-/**
- * @param {string} keyId NCP 클라이언트 ID (웹, ncpKeyId)
- */
-export function loadNaverMapsWithGeocoder(keyId) {
-  if (typeof window !== "undefined" && window.naver?.maps?.Map) {
-    return Promise.resolve();
-  }
-  if (scriptPromise) return scriptPromise;
-
-  scriptPromise = new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.dataset.naverMaps = "1";
-    s.async = true;
-    s.src = `${MAP_SCRIPT}?ncpKeyId=${encodeURIComponent(keyId)}&submodules=geocoder`;
-    s.onload = () => resolve();
-    s.onerror = () => {
-      scriptPromise = null;
-      reject(new Error("네이버 지도 스크립트 로드에 실패했어요."));
-    };
-    document.head.appendChild(s);
-  });
-
-  return scriptPromise;
-}
+import {
+  loadNaverMapsWithGeocoder,
+  reverseGeocodeCoordsFromMapClick,
+  reverseGeocodeServiceToRegion,
+} from "../lib/naverMapsGeocode.js";
 
 /**
  * @param {{
@@ -41,7 +16,7 @@ export function loadNaverMapsWithGeocoder(keyId) {
  *   onPick: (result: { province: { code: string, name: string }, city: string }) => void,
  *   onStatus?: (message: string, tone?: "info"|"success"|"error") => void,
  * }} opts
- * @returns {Promise<{ el: HTMLElement, setSelected: (_code: string) => void, destroy: () => void }>}
+ * @returns {Promise<{ el: HTMLElement, initMap: () => void, relayoutMap: () => void, setSelected: (_code: string) => void, destroy: () => void }>}
  */
 export async function createNaverRegionPicker(opts) {
   const { keyId, regions, regionCities, onPick, onStatus } = opts;
@@ -69,6 +44,8 @@ export async function createNaverRegionPicker(opts) {
     wrap.appendChild(note);
     return {
       el: wrap,
+      initMap() {},
+      relayoutMap() {},
       setSelected() {},
       destroy() {},
     };
@@ -80,63 +57,109 @@ export async function createNaverRegionPicker(opts) {
     const note = document.createElement("p");
     note.className = "form-hint locate-status";
     note.dataset.tone = "error";
+    note.style.whiteSpace = "pre-line";
     note.textContent = e instanceof Error ? e.message : "지도를 불러오지 못했어요.";
     wrap.appendChild(note);
     return {
       el: wrap,
+      initMap() {},
+      relayoutMap() {},
       setSelected() {},
       destroy() {},
     };
   }
 
   const n = window.naver;
-  const center = new n.maps.LatLng(36.34, 127.77);
-  const map = new n.maps.Map(mapEl, {
-    center,
-    zoom: 7,
-    minZoom: 6,
-    maxZoom: 19,
-    mapTypeControl: false,
-  });
-
+  let map = null;
   let marker = null;
-  const clickListen = n.maps.Event.addListener(map, "click", (e) => {
-    const latlng = e.coord;
-    if (marker) marker.setMap(null);
-    marker = new n.maps.Marker({ position: latlng, map });
+  /** @type {unknown} */
+  let clickListen = null;
+  let resizeObserver = null;
+  const onOrientation = () => relayoutMap();
 
-    onStatus?.("주소를 확인하고 있어요…", "info");
+  const relayoutMap = () => {
+    if (!map || !n?.maps?.Event) return;
+    n.maps.Event.trigger(map, "resize");
+  };
 
-    n.maps.Service.reverseGeocode({ coords: latlng }, (status, response) => {
-      if (status !== n.maps.Service.Status.OK) {
-        onStatus?.(
-          "이 위치의 주소를 찾지 못했어요. 다른 곳을 누르거나 목록에서 골라 주세요.",
-          "error"
-        );
-        return;
-      }
-      const v2 = response?.v2;
-      const parsed = parseNaverReverseGeocodeForForm(v2, regions, regionCities);
-      if (!parsed) {
-        onStatus?.("시·도를 알 수 없어요. 목록에서 골라 주세요.", "error");
-        return;
-      }
-      onPick(parsed);
-      const loc = parsed.city
-        ? `${parsed.province.name} ${parsed.city}`
-        : parsed.province.name;
-      onStatus?.(`지도에서 선택: ${loc}`, "success");
+  const scheduleRelayout = () => {
+    relayoutMap();
+    requestAnimationFrame(() => {
+      relayoutMap();
+      requestAnimationFrame(relayoutMap);
     });
-  });
+    setTimeout(relayoutMap, 120);
+    setTimeout(relayoutMap, 400);
+  };
+
+  const initMap = () => {
+    if (map) return;
+    const center = new n.maps.LatLng(36.34, 127.77);
+    map = new n.maps.Map(mapEl, {
+      center,
+      zoom: 7,
+      minZoom: 6,
+      maxZoom: 19,
+      mapTypeControl: false,
+    });
+
+    clickListen = n.maps.Event.addListener(map, "click", (e) => {
+      const latlng = e.coord;
+      if (marker) marker.setMap(null);
+      marker = new n.maps.Marker({ position: latlng, map });
+
+      onStatus?.("주소를 확인하고 있어요…", "info");
+
+      const coordStr = reverseGeocodeCoordsFromMapClick(latlng);
+      if (!coordStr) {
+        onStatus?.("누른 위치 좌표를 읽지 못했어요. 다시 눌러 주세요.", "error");
+        return;
+      }
+
+      reverseGeocodeServiceToRegion(n, coordStr, regions, regionCities).then(({ parsed, transportOk }) => {
+        if (parsed) {
+          onPick(parsed);
+          const loc = parsed.city
+            ? `${parsed.province.name} ${parsed.city}`
+            : parsed.province.name;
+          onStatus?.(`지도에서 선택: ${loc}`, "success");
+          return;
+        }
+        if (transportOk) {
+          onStatus?.("시·도를 알 수 없어요. 목록에서 골라 주세요.", "error");
+        } else {
+          onStatus?.(
+            "이 위치의 주소를 찾지 못했어요. 다른 곳을 누르거나 목록에서 골라 주세요.",
+            "error"
+          );
+        }
+      });
+    });
+
+    scheduleRelayout();
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => relayoutMap());
+      resizeObserver.observe(mapEl);
+    }
+    window.addEventListener("orientationchange", onOrientation);
+  };
 
   const destroy = () => {
-    n.maps.Event.removeListener(clickListen);
+    window.removeEventListener("orientationchange", onOrientation);
+    resizeObserver?.disconnect();
+    resizeObserver = null;
+    if (clickListen) n.maps.Event.removeListener(clickListen);
+    clickListen = null;
     if (marker) marker.setMap(null);
+    marker = null;
+    map = null;
     mapEl.replaceChildren();
   };
 
   return {
     el: wrap,
+    initMap,
+    relayoutMap,
     setSelected() {},
     destroy,
   };
