@@ -1,0 +1,276 @@
+/* ===================================================
+   Onboarding Overlay
+   =================================================== */
+
+/* ── 전체 오버레이 ── */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0f1117;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+  transition: opacity 0.45s ease;
+}
+.onboarding-overlay.is-hiding {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── 입력 방식 선택 (화면 1) ── */
+.select-mode {
+  width: 100%;
+  max-width: 540px;
+  text-align: center;
+}
+.select-mode-inner {
+  opacity: 1;
+  animation: obFadeUp 0.5s ease forwards;
+}
+.sm-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.sm-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+.sm-desc {
+  font-size: 1.125rem;
+  color: #94a3b8;
+  margin-bottom: 2.5rem;
+}
+.sm-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+@media (min-width: 480px) {
+  .sm-buttons { flex-direction: row; }
+}
+.sm-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  border: 2px solid #334155;
+  border-radius: 1rem;
+  background: #1e2535;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  font-family: inherit;
+  color: #f1f5f9;
+}
+.sm-btn:hover {
+  border-color: #6366f1;
+  background: #252d40;
+  transform: translateY(-2px);
+}
+.sm-btn:active { transform: scale(0.97); }
+.sm-btn-icon { font-size: 2rem; }
+.sm-btn-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.sm-btn-sub {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+.sm-btn--voice:hover { border-color: #a78bfa; }
+.sm-btn--text:hover  { border-color: #38bdf8; }
+
+/* ── 공통 링크 버튼 ── */
+.ob-link {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.975rem;
+  color: #64748b;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+  padding: 0;
+}
+.ob-link:hover { color: #94a3b8; }
+.sm-skip { display: block; margin: 0 auto; }
+
+/* ── 음성 온보딩 (화면 2) ── */
+.voice-onboarding {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: obFadeUp 0.5s ease both;
+  padding-bottom: 2rem;
+}
+.sphere-wrap {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  flex-shrink: 0;
+}
+.sphere-canvas {
+  display: block;
+  border-radius: 50%;
+}
+.voice-transcript {
+  min-height: 2rem;
+  font-size: 1.1rem;
+  color: #94a3b8;
+  text-align: center;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  max-width: 480px;
+}
+
+/* ── 텍스트 온보딩 ── */
+.text-onboarding {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: obFadeUp 0.5s ease both;
+  padding-bottom: 2rem;
+}
+.text-ob-guide {
+  font-size: 1rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ── StepSelector ── */
+.step-selector {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* 진행 표시 */
+.step-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #334155;
+  transition: background 0.3s;
+}
+.step-dot.active { background: #6366f1; box-shadow: 0 0 8px #6366f188; }
+.step-dot.done   { background: #22c55e; }
+.step-line {
+  width: 32px;
+  height: 2px;
+  background: #334155;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+.step-line.done { background: #22c55e; }
+.step-count {
+  margin-left: 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 요약 칩 */
+.step-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.step-chip {
+  background: #1e2535;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+.step-chip-sep {
+  color: #334155;
+  font-size: 0.75rem;
+}
+
+/* 질문 */
+.step-question {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-align: center;
+  line-height: 1.3;
+}
+@media (max-width: 480px) {
+  .step-question { font-size: 1.3rem; }
+}
+.step-hint {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: -0.5rem;
+}
+
+/* 선택지 그리드 */
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+.step-option {
+  padding: 0.85rem 0.5rem;
+  border: 2px solid #334155;
+  border-radius: 0.75rem;
+  background: #1e2535;
+  color: #cbd5e1;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, transform 0.12s, color 0.18s;
+  text-align: center;
+  min-height: 56px;
+}
+.step-option:hover {
+  border-color: #6366f1;
+  background: #252d40;
+  color: #f1f5f9;
+  transform: scale(1.03);
+}
+.step-option.selected {
+  border-color: #6366f1;
+  background: #312e81;
+  color: #e0e7ff;
+  transform: scale(1.06);
+  box-shadow: 0 0 16px #6366f155;
+}
+
+/* ── 애니메이션 ── */
+@keyframes obFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-fast {
+  animation: obFadeUp 0.38s ease both;
+}
