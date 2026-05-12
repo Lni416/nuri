@@ -112,14 +112,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  animation: obFadeUp 0.5s ease both;
+  gap: 0.75rem;
+  animation: obFadeUp 0.5s ease forwards;
   padding-bottom: 2rem;
 }
 .sphere-wrap {
   position: relative;
-  width: 240px;
-  height: 240px;
+  width: 160px;
+  height: 160px;
   flex-shrink: 0;
 }
 .sphere-canvas {
@@ -144,7 +144,7 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  animation: obFadeUp 0.5s ease both;
+  animation: obFadeUp 0.5s ease forwards;
   padding-bottom: 2rem;
 }
 .text-ob-guide {
@@ -271,6 +271,8 @@
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* both → forwards: 동적 삽입 시 backwards fill(opacity:0)로 인한 영구 투명 방지 */
 .fade-in-fast {
-  animation: obFadeUp 0.38s ease both;
+  animation: obFadeUp 0.38s ease forwards;
 }

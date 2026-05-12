@@ -6,7 +6,7 @@ import { createRecognizer, isSpeechSupported } from '../utils/speechRecognition.
 import { createAudioAnalyser } from '../utils/audioAnalyser.js';
 import { createStepSelector } from './StepSelector.js';
 
-const SPHERE_SIZE = 240;
+const SPHERE_SIZE = 160;
 const DOT_COUNT = 160;
 
 function fibonacciSphere(n) {
