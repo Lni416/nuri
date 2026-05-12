@@ -3,12 +3,16 @@
  */
 
 import "./styles/index.css";
+import "./styles/onboarding.css";
 import { createHeader } from "./components/header.js";
 import { createFooter } from "./components/footer.js";
 import { createLoading } from "./components/loading.js";
 import { createHomePage } from "./pages/home.js";
 import { createResultsPage } from "./pages/results.js";
 import { searchInfo } from "./utils/api.js";
+import { createSelectMode } from "./pages/SelectMode.js";
+import { createVoiceOnboarding } from "./pages/VoiceOnboarding.js";
+import { createTextOnboarding } from "./pages/TextOnboarding.js";
 
 class NuriApp {
   constructor() {
@@ -38,6 +42,7 @@ class NuriApp {
 
     // 초기 페이지
     this.showHome();
+    this.showOnboarding();
   }
 
   /**
@@ -55,6 +60,58 @@ class NuriApp {
   showHome() {
     const page = createHomePage((formData) => this.handleSearch(formData));
     this.setPage(page);
+  }
+
+  /**
+   * 온보딩 오버레이 표시 (초기 진입 시).
+   */
+  showOnboarding() {
+    const overlay = document.createElement('div');
+    overlay.className = 'onboarding-overlay';
+
+    const close = (formData) => {
+      overlay.classList.add('is-hiding');
+      overlay.addEventListener('transitionend', () => {
+        overlay._currentPage?._destroy?.();
+        overlay.remove();
+      }, { once: true });
+      if (formData) this.handleSearch(formData);
+    };
+
+    const showPage = (pageEl) => {
+      overlay._currentPage?._destroy?.();
+      overlay._currentPage = pageEl;
+      overlay.innerHTML = '';
+      overlay.appendChild(pageEl);
+    };
+
+    const showSelect = () => {
+      const el = createSelectMode({
+        onVoice: showVoice,
+        onText: showText,
+        onSkip: () => close(null),
+      });
+      showPage(el);
+    };
+
+    const showVoice = () => {
+      const el = createVoiceOnboarding({
+        onComplete: (formData) => close(formData),
+        onFallback: showText,
+      });
+      showPage(el);
+    };
+
+    const showText = () => {
+      const el = createTextOnboarding({
+        onComplete: (formData) => close(formData),
+        onBack: showSelect,
+      });
+      showPage(el);
+    };
+
+    showSelect();
+    document.body.appendChild(overlay);
   }
 
   /**
