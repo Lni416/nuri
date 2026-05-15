@@ -24,9 +24,10 @@ node_modules/
 frontend/dist/
 *.local
 
-# IDE
+# IDE / Editor rules
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
