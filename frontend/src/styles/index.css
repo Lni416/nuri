@@ -5,6 +5,8 @@
 
 /* ── CSS Custom Properties ── */
 :root {
+  color-scheme: light;
+
   /* Colors — 라이트 베이스 + 인디고 포인트 (온보딩 테마색 통일) */
   --color-primary: #6366f1;
   --color-primary-light: #818cf8;
