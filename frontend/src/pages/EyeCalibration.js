@@ -56,10 +56,16 @@ export function createEyeCalibration({ onComplete, onBack }) {
     barFill.style.width = `${(done / total) * 100}%`;
 
     dots.forEach((d, i) => {
-      d.className =
-        i < pointIndex ? 'cal-dot done' :
-        i === pointIndex ? 'cal-dot active' :
-        'cal-dot';
+      if (i < pointIndex) {
+        d.className = 'cal-dot done';
+        d.textContent = '';
+      } else if (i === pointIndex) {
+        d.className = 'cal-dot active';
+        d.textContent = clickCount > 0 ? `${clickCount}` : '';
+      } else {
+        d.className = 'cal-dot';
+        d.textContent = '';
+      }
     });
   }
 

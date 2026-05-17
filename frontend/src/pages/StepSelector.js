@@ -101,11 +101,24 @@ export function createStepSelector({ mode, onComplete, gazeTracker = null }) {
     clearDwell();
     if (mode !== 'eye' || !gazeTracker) return;
 
+    // WebGazer 오차(±80~150px)를 고려해 버튼 bounding rect 기반으로 판별
+    const TOLERANCE = 32;
+
     removeDwellListener = gazeTracker.onGaze((x, y) => {
       if (locked) return;
 
-      const hit = document.elementFromPoint(x, y);
-      const btn = hit?.closest?.('.step-option');
+      const buttons = el.querySelectorAll('.step-option');
+      let btn = null;
+      for (const b of buttons) {
+        const r = b.getBoundingClientRect();
+        if (
+          x >= r.left - TOLERANCE && x <= r.right + TOLERANCE &&
+          y >= r.top  - TOLERANCE && y <= r.bottom + TOLERANCE
+        ) {
+          btn = b;
+          break;
+        }
+      }
 
       if (btn !== dwellTarget) {
         clearDwell();
@@ -115,7 +128,6 @@ export function createStepSelector({ mode, onComplete, gazeTracker = null }) {
           btn.classList.add('dwell-active');
           scheduleTick();
         }
-        return;
       }
     });
   }
