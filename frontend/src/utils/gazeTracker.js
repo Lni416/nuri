@@ -44,9 +44,21 @@ export async function createGazeTracker() {
 
   const listeners = new Set();
 
+  // EMA 스무딩 — alpha가 낮을수록 부드럽고 반응이 느려짐
+  const ALPHA = 0.12;
+  let sx = null;
+  let sy = null;
+
   wg.setGazeListener((data) => {
     if (!data) return;
-    for (const fn of listeners) fn(data.x, data.y);
+    if (sx === null) {
+      sx = data.x;
+      sy = data.y;
+    } else {
+      sx = ALPHA * data.x + (1 - ALPHA) * sx;
+      sy = ALPHA * data.y + (1 - ALPHA) * sy;
+    }
+    for (const fn of listeners) fn(sx, sy);
   });
 
   return {

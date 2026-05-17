@@ -150,7 +150,7 @@
   pointer-events: none;
   z-index: 10002;
   opacity: 0;
-  transition: transform 0.04s linear, opacity 0.2s;
+  transition: transform 0.12s ease-out, opacity 0.3s;
 }
 .gaze-cursor.visible { opacity: 1; }
 
