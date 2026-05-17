@@ -1,6 +1,10 @@
 /**
  * 눈 응시 온보딩.
  * 흐름: WebGazer 로드 → 카메라 권한 → 보정 → StepSelector (dwell 모드)
+ *
+ * ⚠️ CSS 주의: obFadeUp 애니메이션은 transform을 포함하므로,
+ *   animation이 붙은 el(eye-onboarding)이 position:fixed 자식의 containing block이 된다.
+ *   보정 화면 진입 시 el 자체를 position:fixed로 확장해 이 문제를 우회한다.
  */
 
 import { createGazeTracker } from '../utils/gazeTracker.js';
@@ -18,7 +22,6 @@ export function createEyeOnboarding({ onComplete, onFallback }) {
   let gazeTracker = null;
   const cleanups = [];
 
-  // 초기 로딩 메시지
   const statusEl = document.createElement('p');
   statusEl.className = 'eye-status';
   statusEl.textContent = '카메라를 시작하는 중…';
@@ -35,7 +38,20 @@ export function createEyeOnboarding({ onComplete, onFallback }) {
     }
   }
 
+  function makeFullscreen() {
+    // animation의 transform이 containing block을 만들지 않도록 el 자체를 fixed로 확장
+    el.style.cssText =
+      'position:fixed;inset:0;max-width:none;width:100%;height:100%;' +
+      'display:block;padding:0;gap:0;animation:none;';
+  }
+
+  function resetLayout() {
+    el.removeAttribute('style');
+    el.style.animation = 'none'; // 재진입 시 fade 재생 방지
+  }
+
   function showCalibration() {
+    makeFullscreen();
     el.innerHTML = '';
     const cal = createEyeCalibration({
       onComplete: showSelector,
@@ -45,6 +61,7 @@ export function createEyeOnboarding({ onComplete, onFallback }) {
   }
 
   function showSelector() {
+    resetLayout();
     el.innerHTML = '';
 
     // 시선 커서 — 현재 gaze 위치를 화면에 표시
@@ -61,7 +78,7 @@ export function createEyeOnboarding({ onComplete, onFallback }) {
 
     const guide = document.createElement('p');
     guide.className = 'eye-guide';
-    guide.innerHTML = '항목을 <strong>1.5초</strong> 동안 바라보면 자동으로 선택됩니다. <span class="eye-guide-dot"></span>';
+    guide.textContent = '항목을 1.5초 동안 바라보면 자동으로 선택됩니다.';
     el.appendChild(guide);
 
     const { el: stepEl } = createStepSelector({

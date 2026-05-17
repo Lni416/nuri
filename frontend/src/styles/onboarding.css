@@ -48,9 +48,8 @@
 
 /* ── 보정 화면 ── */
 .eye-calibration {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 10000;
   background: #0f1117;
 }
 .cal-info {
