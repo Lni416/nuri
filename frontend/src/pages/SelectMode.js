@@ -1,14 +1,14 @@
 /**
- * 입력 방식 선택 화면 — 음성 / 텍스트 / 건너뛰기.
+ * 입력 방식 선택 화면 — 음성 / 눈 응시 / 직접 입력 / 건너뛰기.
  */
 
 import { isSpeechSupported } from '../utils/speechRecognition.js';
 
 /**
- * @param {{ onVoice: Function, onText: Function, onSkip: Function }} params
+ * @param {{ onVoice: Function, onEye: Function, onText: Function, onSkip: Function }} params
  * @returns {HTMLElement}
  */
-export function createSelectMode({ onVoice, onText, onSkip }) {
+export function createSelectMode({ onVoice, onEye, onText, onSkip }) {
   const el = document.createElement('div');
   el.className = 'select-mode';
 
@@ -16,9 +16,9 @@ export function createSelectMode({ onVoice, onText, onSkip }) {
   inner.className = 'select-mode-inner';
 
   inner.innerHTML = `
-    <div class="sm-icon">🎙️</div>
+    <div class="sm-icon">✨</div>
     <h1 class="sm-title">어떻게 알려드릴까요?</h1>
-    <p class="sm-desc">음성이나 터치로 간편하게 정보를 찾아드릴게요.</p>
+    <p class="sm-desc">원하는 방식으로 간편하게 정보를 찾아드릴게요.</p>
     <div class="sm-buttons"></div>
     <button class="ob-link sm-skip">기존 폼으로 직접 입력하기</button>
   `;
@@ -36,6 +36,16 @@ export function createSelectMode({ onVoice, onText, onSkip }) {
     voiceBtn.addEventListener('click', onVoice);
     btnsWrap.appendChild(voiceBtn);
   }
+
+  const eyeBtn = document.createElement('button');
+  eyeBtn.className = 'sm-btn sm-btn--eye';
+  eyeBtn.innerHTML = `
+    <span class="sm-btn-icon">👁️</span>
+    <span class="sm-btn-label">눈으로 선택하기</span>
+    <span class="sm-btn-sub">바라보면 자동으로 선택돼요</span>
+  `;
+  eyeBtn.addEventListener('click', onEye);
+  btnsWrap.appendChild(eyeBtn);
 
   const textBtn = document.createElement('button');
   textBtn.className = 'sm-btn sm-btn--text';

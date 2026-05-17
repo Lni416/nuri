@@ -1,5 +1,5 @@
 /**
- * 공통 단계별 선택 컴포넌트 (음성/텍스트 공통).
+ * 공통 단계별 선택 컴포넌트 (음성 / 텍스트 / 눈 응시 공통).
  * 3단계: 지역 → 나이 → 분야
  */
 
@@ -7,7 +7,10 @@ const STEPS = [
   {
     id: 'region',
     question: '어디에 살고 계세요?',
-    hint: '지역을 말하거나 눌러 주세요',
+    hints: {
+      voice: '지역을 말하거나 눌러 주세요',
+      eye: '지역을 바라보면 자동으로 선택됩니다',
+    },
     options: [
       { value: '서울', label: '서울', keywords: ['서울'] },
       { value: '경기', label: '경기', keywords: ['경기'] },
@@ -22,7 +25,10 @@ const STEPS = [
   {
     id: 'age',
     question: '나이대가 어떻게 되세요?',
-    hint: '나이대를 말하거나 눌러 주세요',
+    hints: {
+      voice: '나이대를 말하거나 눌러 주세요',
+      eye: '나이대를 바라보면 자동으로 선택됩니다',
+    },
     options: [
       { value: '10', label: '10대', age: 15, occupation: '학생',  keywords: ['십대', '10대', '열'] },
       { value: '20', label: '20대', age: 25, occupation: '직장인', keywords: ['이십대', '20대', '스물', '이십'] },
@@ -34,13 +40,16 @@ const STEPS = [
   {
     id: 'field',
     question: '관심 있는 분야가 있나요?',
-    hint: '분야를 말하거나 눌러 주세요',
+    hints: {
+      voice: '분야를 말하거나 눌러 주세요',
+      eye: '분야를 바라보면 자동으로 선택됩니다',
+    },
     options: [
       { value: 'IT',   label: 'IT / 개발',  interests: ['취업'],           keywords: ['아이티', 'IT', '개발', '컴퓨터', '소프트웨어', '프로그래밍'] },
       { value: '디자인', label: '디자인',    interests: ['취업', '문화'],    keywords: ['디자인'] },
       { value: '마케팅', label: '마케팅',    interests: ['취업'],           keywords: ['마케팅', '홍보'] },
       { value: '교육',  label: '교육',      interests: ['교육'],           keywords: ['교육', '공부', '학습', '강의'] },
-      { value: '의료',  label: '의료 / 건강', interests: ['의료'],         keywords: ['의료', '의학', '건강', '병원', '의사', '간호'] },
+      { value: '의료',  label: '의료 / 건강', interests: ['의료'],          keywords: ['의료', '의학', '건강', '병원', '의사', '간호'] },
       { value: '금융',  label: '금융',      interests: ['취업', '생활'],    keywords: ['금융', '은행', '투자', '경제', '보험'] },
       { value: '기타',  label: '기타',      interests: ['생활'],           keywords: ['기타', '다른', '그 외', '기타분야'] },
     ],
@@ -58,17 +67,83 @@ const REGION_NAME_MAP = {
   기타: '경기도',
 };
 
+const DWELL_MS = 1500;
+
 /**
- * @param {{ mode: 'voice'|'text', onComplete: Function }} params
- * @returns {{ el: HTMLElement, handleTranscript: Function, destroy: Function }}
+ * @param {{ mode: 'voice'|'text'|'eye', onComplete: Function, gazeTracker?: object }} params
  */
-export function createStepSelector({ mode, onComplete }) {
+export function createStepSelector({ mode, onComplete, gazeTracker = null }) {
   let currentStep = 0;
   let locked = false;
   const selections = [null, null, null];
 
   const el = document.createElement('div');
   el.className = 'step-selector';
+
+  // dwell 상태
+  let removeDwellListener = null;
+  let dwellTarget = null;
+  let dwellStart = null;
+  let dwellRaf = null;
+
+  function clearDwell() {
+    if (dwellTarget) {
+      dwellTarget.classList.remove('dwell-active');
+      dwellTarget.style.removeProperty('--dwell');
+    }
+    dwellTarget = null;
+    dwellStart = null;
+    if (dwellRaf) { cancelAnimationFrame(dwellRaf); dwellRaf = null; }
+  }
+
+  function setupDwell() {
+    if (removeDwellListener) { removeDwellListener(); removeDwellListener = null; }
+    clearDwell();
+    if (mode !== 'eye' || !gazeTracker) return;
+
+    removeDwellListener = gazeTracker.onGaze((x, y) => {
+      if (locked) return;
+
+      const hit = document.elementFromPoint(x, y);
+      const btn = hit?.closest?.('.step-option');
+
+      if (btn !== dwellTarget) {
+        clearDwell();
+        if (btn) {
+          dwellTarget = btn;
+          dwellStart = performance.now();
+          btn.classList.add('dwell-active');
+          scheduleTick();
+        }
+        return;
+      }
+    });
+  }
+
+  function scheduleTick() {
+    if (dwellRaf) return;
+    dwellRaf = requestAnimationFrame(tick);
+  }
+
+  function tick() {
+    dwellRaf = null;
+    if (!dwellTarget || !dwellStart || locked) return;
+
+    const pct = Math.min(100, ((performance.now() - dwellStart) / DWELL_MS) * 100);
+    dwellTarget.style.setProperty('--dwell', `${pct}%`);
+
+    if (pct >= 100) {
+      const value = dwellTarget.dataset.value;
+      const opt = STEPS[currentStep].options.find((o) => o.value === value);
+      if (opt) {
+        clearDwell();
+        select(opt);
+      }
+      return;
+    }
+
+    dwellRaf = requestAnimationFrame(tick);
+  }
 
   function render() {
     el.innerHTML = '';
@@ -103,39 +178,55 @@ export function createStepSelector({ mode, onComplete }) {
       el.appendChild(summary);
     }
 
-    // 현재 단계
+    // 질문
     const step = STEPS[currentStep];
     const questionEl = document.createElement('h2');
     questionEl.className = 'step-question fade-in-fast';
     questionEl.textContent = step.question;
     el.appendChild(questionEl);
 
-    if (mode === 'voice') {
+    // 힌트 (음성 / 눈 모드)
+    if (mode === 'voice' || mode === 'eye') {
       const hint = document.createElement('p');
       hint.className = 'step-hint';
-      hint.textContent = step.hint;
+      hint.textContent = step.hints[mode] ?? step.hints.voice;
       el.appendChild(hint);
     }
 
-    // 선택지
+    // 선택지 그리드
     const grid = document.createElement('div');
     grid.className = 'step-grid fade-in-fast';
     step.options.forEach((opt) => {
       const btn = document.createElement('button');
       btn.className = 'step-option';
-      btn.textContent = opt.label;
       btn.dataset.value = opt.value;
       btn.addEventListener('click', () => select(opt));
+
+      // 눈 응시 모드용 dwell 링 레이어
+      if (mode === 'eye') {
+        const ring = document.createElement('span');
+        ring.className = 'dwell-ring';
+        btn.appendChild(ring);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'step-option-label';
+      label.textContent = opt.label;
+      btn.appendChild(label);
+
       grid.appendChild(btn);
     });
     el.appendChild(grid);
+
+    // eye 모드: dwell 설정 (렌더 후 새 DOM에 연결)
+    if (mode === 'eye') setupDwell();
   }
 
   function select(option) {
     if (locked) return;
     locked = true;
+    clearDwell();
 
-    // 선택 강조
     const btn = el.querySelector(`.step-option[data-value="${option.value}"]`);
     if (btn) btn.classList.add('selected');
 
@@ -177,7 +268,12 @@ export function createStepSelector({ mode, onComplete }) {
     };
   }
 
+  function destroy() {
+    if (removeDwellListener) { removeDwellListener(); removeDwellListener = null; }
+    clearDwell();
+  }
+
   render();
 
-  return { el, handleTranscript, destroy: () => {} };
+  return { el, handleTranscript, destroy };
 }

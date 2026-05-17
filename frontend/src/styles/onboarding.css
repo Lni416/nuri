@@ -21,6 +21,168 @@
   pointer-events: none;
 }
 
+/* ── 눈 응시 온보딩 ── */
+.eye-onboarding {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: obFadeUp 0.5s ease forwards;
+  padding-bottom: 2rem;
+}
+.eye-status {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2rem 1rem;
+  font-style: italic;
+}
+.eye-guide {
+  font-size: 0.95rem;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: -0.25rem;
+}
+
+/* ── 보정 화면 ── */
+.eye-calibration {
+  position: absolute;
+  inset: 0;
+  background: #0f1117;
+  overflow: hidden;
+}
+.cal-info {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: 100%;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+.cal-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 0.35rem;
+}
+.cal-desc {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+.cal-bar-wrap {
+  position: absolute;
+  top: 5.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(260px, 60vw);
+  height: 4px;
+  background: #1e2535;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cal-bar-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 2px;
+  transition: width 0.25s ease;
+  width: 0%;
+}
+.cal-dot {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1e2535;
+  border: 2px solid #334155;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  font-size: 0;
+}
+.cal-dot.active {
+  background: #ef4444;
+  border-color: #ef4444;
+  animation: calPulse 0.85s ease-in-out infinite;
+}
+.cal-dot.done {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+.cal-dot.cal-flash {
+  transform: translate(-50%, -50%) scale(0.72);
+}
+@keyframes calPulse {
+  0%, 100% { box-shadow: 0 0 0 0 #ef444455; }
+  50%       { box-shadow: 0 0 0 10px transparent; }
+}
+.cal-action-btn {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.cal-action-btn + .cal-action-btn {
+  bottom: 1.1rem;
+}
+
+/* ── sm-btn 눈 응시 변형 ── */
+.sm-btn--eye:hover { border-color: #34d399; }
+
+/* ── dwell 링 (눈 응시 선택지 오버레이) ── */
+.step-option {
+  position: relative;
+}
+.dwell-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 0.75rem;
+  background: conic-gradient(#6366f177 var(--dwell, 0%), transparent var(--dwell, 0%));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.step-option.dwell-active .dwell-ring {
+  opacity: 1;
+}
+.step-option-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── WebGazer 비디오 프리뷰 ── */
+#webgazerVideoContainer {
+  position: fixed !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  left: auto !important;
+  z-index: 10001 !important;
+  width: 148px !important;
+  border-radius: 0.6rem !important;
+  overflow: hidden !important;
+  border: 2px solid #334155 !important;
+  box-shadow: 0 4px 18px #0009 !important;
+  background: #0f1117 !important;
+}
+#webgazerVideoFeed,
+#webgazerVideoCanvas {
+  width: 148px !important;
+  height: 111px !important;
+  display: block !important;
+  object-fit: cover !important;
+}
+#webgazerFaceOverlay,
+#webgazerFaceFeedbackBox {
+  display: none !important;
+}
+#webgazerGazeDot {
+  display: none !important;
+}
+
 /* ── 입력 방식 선택 (화면 1) ── */
 .select-mode {
   width: 100%;

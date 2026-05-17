@@ -13,6 +13,7 @@ import { searchInfo } from "./utils/api.js";
 import { createSelectMode } from "./pages/SelectMode.js";
 import { createVoiceOnboarding } from "./pages/VoiceOnboarding.js";
 import { createTextOnboarding } from "./pages/TextOnboarding.js";
+import { createEyeOnboarding } from "./pages/EyeOnboarding.js";
 
 class NuriApp {
   constructor() {
@@ -88,8 +89,17 @@ class NuriApp {
     const showSelect = () => {
       const el = createSelectMode({
         onVoice: showVoice,
+        onEye: showEye,
         onText: showText,
         onSkip: () => close(null),
+      });
+      showPage(el);
+    };
+
+    const showEye = () => {
+      const el = createEyeOnboarding({
+        onComplete: (formData) => close(formData),
+        onFallback: showText,
       });
       showPage(el);
     };
